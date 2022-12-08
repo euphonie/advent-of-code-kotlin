@@ -21,6 +21,18 @@ class MultiStack(private val stackCount: Int, private val stackSize: Int)  {
         tops[stackIndex] -= 1
         return value
     }
+    
+    fun multiPush(stackIndex: Int, values: List<String>) {
+        values.forEach{ v -> push(stackIndex, v) }
+    }
+    
+    fun multiPop(stackIndex: Int, count: Int) : List<String> {
+        if (tops[stackIndex] == -1) {
+            throw Exception("empty stack")
+        }
+        
+        return IntRange(1, count).map { pop(stackIndex) }
+    }
 
     fun peek( stackIndex: Int) : String {
         if (tops[stackIndex] == -1) {
@@ -107,12 +119,31 @@ fun main() {
         
         return IntRange(0, stackCount -1).joinToString("") { stacks.peek(it) }
     }
-    fun part2(input: List<String>) : Int { return 2}
+    fun part2(input: List<String>) : String {
+        val (assignments, commands) = processInput(input)
+        val stackCount = assignments.first().size
+        val stacks : MultiStack = MultiStack(stackCount, assignments.size * stackCount)
+
+        assignments.reversed()
+            .forEach {
+                    assignment ->
+                assignment.indices.forEach { i -> if (assignment[i] != " ") stacks.push(i, assignment[i]) }
+            }
+
+        commands.forEach { command ->
+            val elements = stacks.multiPop(command.origin -1, command.count)
+            stacks.multiPush(command.dest -1, elements.reversed())
+        }
+
+        return IntRange(0, stackCount -1).joinToString("") { stacks.peek(it) }
+    }
 
 
     val testInput = readInput("Day05_test")
     check(part1(testInput) == "CMZ")
+    check(part2(testInput) == "MCD")
 
     val input = readInput("Day05")
     check(part1(input) == "PSNRGBTFT")
+    check(part2(input) == "BNTZFPMMW")
 }
