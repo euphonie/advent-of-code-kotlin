@@ -1,3 +1,5 @@
+import kotlin.math.abs
+
 class Node(
     var size: Int,
     val parent: Node?,
@@ -138,11 +140,28 @@ fun main() {
         return deleteCandidateLookup.candidates.sumOf { it.size}
     }
     
+    fun part2(input: List<String>) : Int {
+        val diskSize = 70_000_000
+        val allowedMinimumSize = 30_000_000
+        
+        val root = buildFilesystem(input)
+        traverseDir(root, sizeCounter)
+        val requiredThreshold = 
+            abs((diskSize - root.size) - allowedMinimumSize)
+        val deleteBiggerThanThreshold = {node: Node -> node.size >= requiredThreshold}
+        
+        val deleteCandidateLookup = DeleteCandidateVisitor(deleteBiggerThanThreshold)
+        //traverseDir(root, logger) // debugging
+        traverseDir(root, deleteCandidateLookup)
+
+        return deleteCandidateLookup.candidates.minOf { it.size }
     }
     
     val testInput = readInput("Day07_test")
     check(part1(testInput) == 95437)
+    check(part2(testInput) == 24933642)
     
     val input = readInput("Day07")
     check(part1(input) == 1086293)
+    check(part2(input) == 366028)
 }
