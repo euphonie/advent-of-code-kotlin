@@ -40,10 +40,12 @@ class SizeAggregationVisitor: DirVisitor {
         }
     }
 }
-class DeleteCandidateVisitor: DirVisitor {
+class DeleteCandidateVisitor(
+    private val shouldBeDeleted : (node: Node) -> Boolean): DirVisitor {
+    
     val candidates: MutableList<Node> = mutableListOf()
     override fun visit(node: Node) {
-        if (node.isDir && node.size <= 100_000) {
+        if (node.isDir && shouldBeDeleted(node)) {
             candidates.add(node)            
         }
     }
@@ -52,8 +54,11 @@ fun main() {
     
     val getArgByIndex : (String, Int) -> String = {output: String, index: Int ->
         output.removePrefix("$ ").split(" ").getOrNull(index) ?: ""}
-     
-    fun parseCommand(output: String) : ConsoleOutput {
+    
+    val sizeCounter : SizeAggregationVisitor = SizeAggregationVisitor()
+    val logger = LoggerDirVisitor()
+    
+    fun parseCommands(output: String) : ConsoleOutput {
         return when (getArgByIndex(output, 0)) {
             "cd" -> ConsoleOutput(OutputType.CHANGE_DIR, listOf(getArgByIndex(output, 1)))
             "ls" -> ConsoleOutput(OutputType.LIST_FILES, listOf())
@@ -107,7 +112,6 @@ fun main() {
         }
     }
     
-    
     fun traverseDir(current : Node, visitor: DirVisitor) {
         for (child in current.getChildren()) traverseDir(child, visitor)
         visitor.visit(current)
@@ -117,7 +121,7 @@ fun main() {
         val root : Node = Node(0, null, true, "")
         var tail : Node = root
         input.map {
-            parseCommand(it)
+            parseCommands(it)
         }.map {
             tail = processOutput(it, tail)
         }
@@ -125,15 +129,15 @@ fun main() {
     }
     
     fun part1(input: List<String>) : Int {
-        val logger = LoggerDirVisitor()
-        val counter = SizeAggregationVisitor()
-        val candidateLookup = DeleteCandidateVisitor()
+        val deleteLowerThan10k = {node: Node -> node.size <= 100_000}
+        val deleteCandidateLookup = DeleteCandidateVisitor(deleteLowerThan10k)
         val root = buildFilesystem(input)
-        traverseDir(root, counter)
-        //traverseDir(root, logger) // debugging
-        traverseDir(root, candidateLookup)
+        traverseDir(root, sizeCounter)
+        traverseDir(root, deleteCandidateLookup)
         
-        return candidateLookup.candidates.sumOf { it.size}
+        return deleteCandidateLookup.candidates.sumOf { it.size}
+    }
+    
     }
     
     val testInput = readInput("Day07_test")
