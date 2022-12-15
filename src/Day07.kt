@@ -55,7 +55,7 @@ class DeleteCandidateVisitor(
 fun main() {
     
     val getArgByIndex : (String, Int) -> String = {output: String, index: Int ->
-        output.removePrefix("$ ").split(" ").getOrNull(index) ?: ""}
+        output.removePrefix("$ ").split(" ").getOrElse(index) { "" }}
     
     val sizeCounter : SizeAggregationVisitor = SizeAggregationVisitor()
     val logger = LoggerDirVisitor()
@@ -65,7 +65,7 @@ fun main() {
             "cd" -> ConsoleOutput(OutputType.CHANGE_DIR, listOf(getArgByIndex(output, 1)))
             "ls" -> ConsoleOutput(OutputType.LIST_FILES, listOf())
             "dir" -> ConsoleOutput(OutputType.DIR_NAME, listOf(getArgByIndex(output, 1)))
-            null -> ConsoleOutput(OutputType.IGNORE, listOf())
+            "" -> ConsoleOutput(OutputType.IGNORE, listOf())
             else -> ConsoleOutput(OutputType.FILE_INFO,
                 listOf(getArgByIndex(output, 0), getArgByIndex(output, 1)))
         }
